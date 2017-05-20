@@ -32,6 +32,15 @@ namespace OutlineTextSample
     [ContentProperty("Text")]
     public class OutlineText : FrameworkElement
     {
+        #region 定数
+
+        /// <summary>
+        /// デフォルトの縁取りの幅を定義します。
+        /// </summary>
+        private const double DEFAULT_OUTLINE_TICKNESS = 1.0D;
+
+        #endregion
+
         #region フィールド
 
         /// <summary>
@@ -44,9 +53,21 @@ namespace OutlineTextSample
         /// </summary>
         protected Geometry textGeometry = null;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        protected Rect backgroundRect;
+
         #endregion
 
         #region 依存関係プロパティ
+
+        /// <summary>
+        /// Background 依存関係プロパティを識別します。このフィールドは読み取り専用です。
+        /// </summary>
+        public static readonly DependencyProperty BackgroundProperty = DependencyProperty.Register(
+            "Background", typeof(Brush), typeof(OutlineText),
+            new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
 
         /// <summary>
         /// Text 依存関係プロパティを識別します。このフィールドは読み取り専用です。
@@ -88,21 +109,21 @@ namespace OutlineTextSample
         /// </summary>
         public static readonly DependencyProperty ForegroundProperty = DependencyProperty.Register(
             "Foreground", typeof(Brush), typeof(OutlineText),
-            new FrameworkPropertyMetadata(Brushes.Red, FrameworkPropertyMetadataOptions.AffectsRender));
+            new FrameworkPropertyMetadata(Brushes.Black, FrameworkPropertyMetadataOptions.AffectsRender));
 
         /// <summary>
         /// Outline 依存関係プロパティを識別します。このフィールドは読み取り専用です。
         /// </summary>
         public static readonly DependencyProperty OutlineProperty = DependencyProperty.Register(
             "Outline", typeof(Brush), typeof(OutlineText),
-            new FrameworkPropertyMetadata(Brushes.Black, FrameworkPropertyMetadataOptions.AffectsRender));
+            new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
 
         /// <summary>
         /// OutlineThickness 依存関係プロパティを識別します。このフィールドは読み取り専用です。
         /// </summary>
         public static readonly DependencyProperty OutlineThicknessProperty = DependencyProperty.Register(
             "OutlineThickness", typeof(double), typeof(OutlineText),
-            new FrameworkPropertyMetadata(1d, FrameworkPropertyMetadataOptions.AffectsRender));
+            new FrameworkPropertyMetadata(DEFAULT_OUTLINE_TICKNESS, FrameworkPropertyMetadataOptions.AffectsRender));
 
         /// <summary>
         /// OutlineVisibility 依存関係プロパティを識別します。このフィールドは読み取り専用です。
@@ -141,9 +162,38 @@ namespace OutlineTextSample
         public static readonly DependencyProperty FontWeightProperty = TextElement.FontWeightProperty.AddOwner(
             typeof(OutlineText), new FrameworkPropertyMetadata(FormattedTextUpdated));
 
+        /// <summary>
+        /// Padding 依存関係プロパティを識別します。このフィールドは読み取り専用です。
+        /// </summary>
+        public static readonly DependencyProperty PaddingProperty = DependencyProperty.Register(
+            "Padding", typeof(Thickness), typeof(OutlineText),
+            new FrameworkPropertyMetadata(PaddingUpdated));
+
+        /// <summary>
+        /// ClipBackgroundToText 依存関係プロパティを識別します。このフィールドは読み取り専用です。
+        /// </summary>
+        public static readonly DependencyProperty ClipBackgroundToTextProperty = DependencyProperty.Register(
+            "ClipBackgroundToText", typeof(bool), typeof(OutlineText),
+            new FrameworkPropertyMetadata(false, FormattedTextUpdated));
+
         #endregion
 
         #region プロパティ
+
+        /// <summary>
+        /// 取得または設定、 Brush コンテンツ領域の背景の塗りつぶしに使用します。
+        /// </summary>
+        public Brush Background
+        {
+            get
+            {
+                return (Brush)GetValue(BackgroundProperty);
+            }
+            set
+            {
+                SetValue(BackgroundProperty, value);
+            }
+        }
 
         /// <summary>
         /// <see cref="OutlineText"/> に対して、優先される最上位レベルのフォント ファミリを取得または設定します。
@@ -356,6 +406,36 @@ namespace OutlineTextSample
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public Thickness Padding
+        {
+            get
+            {
+                return (Thickness)GetValue(PaddingProperty);
+            }
+            set
+            {
+                SetValue(PaddingProperty, value);
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public bool ClipBackgroundToText
+        {
+            get
+            {
+                return (bool)GetValue(ClipBackgroundToTextProperty);
+            }
+            set
+            {
+                SetValue(ClipBackgroundToTextProperty, value);
+            }
+        }
+
         #endregion
 
         #region コンストラクタ
@@ -380,21 +460,29 @@ namespace OutlineTextSample
         {
             EnsureGeometry();
 
-            //// TODO: Background の描画
-            //// Background を考慮する必要あり
-            //// Padding を考慮する必要あり
-            //drawingContext.DrawRectangle(Brushes.Tomato, null, TextGeometry.Bounds);
+            // 背景の描画
+            if (Background != null)
+            {
+                drawingContext.DrawRectangle(Background, null, backgroundRect);
+            }
 
-            // 縁取りの必要がある場合にのみ描画
-            if ((OutlineVisibility == Visibility.Visible) && (OutlineThickness > 0))
+            // 縁取りの描画
+            if ((OutlineVisibility == Visibility.Visible) && (Outline != null) && (OutlineThickness > 0))
             {
                 // DrawGeometry はパスの中心から OutlineThickness の太さで描画するので、
                 // 外側の太さとしては、2 倍にして描画させる
-                drawingContext.DrawGeometry(Outline, new Pen(Outline, OutlineThickness * 2), textGeometry);
+
+                //GeometryGroup geometryGroup = new GeometryGroup();
+                //geometryGroup.Children.Add(textGeometry);
+                //geometryGroup.Children.Add(new LineGeometry(new Point(textGeometry.Bounds.Left, textGeometry.Bounds.Bottom- 2), new Point(textGeometry.Bounds.Right, textGeometry.Bounds.Bottom - 2)));
+
+                drawingContext.DrawGeometry(null, new Pen(Outline, OutlineThickness * 2), textGeometry);
             }
 
+            //drawingContext.DrawLine(new Pen(Foreground, OutlineThickness), new Point(textGeometry.Bounds.Left + 1, textGeometry.Bounds.Bottom - 2), new Point(textGeometry.Bounds.Right - 1, textGeometry.Bounds.Bottom - 2));
+
             // DrawGeometry は ClearType が効かないので、改めて文字を描画する
-            drawingContext.DrawText(formattedText, new Point());
+            drawingContext.DrawText(formattedText, new Point(Padding.Left, Padding.Top));
         }
 
         /// <summary>
@@ -406,10 +494,10 @@ namespace OutlineTextSample
         {
             EnsureFormattedText();
 
-            formattedText.MaxTextWidth = Math.Min(3579139, constraint.Width);
-            formattedText.MaxTextHeight = constraint.Height;
+            formattedText.MaxTextWidth = Math.Min(3579139, constraint.Width - Padding.Left - Padding.Right);
+            formattedText.MaxTextHeight = constraint.Height - Padding.Top - Padding.Bottom;
 
-            return new Size(formattedText.Width, formattedText.Height);
+            return new Size(formattedText.Width + Padding.Left + Padding.Right, formattedText.Height + Padding.Top + Padding.Bottom);
         }
 
         /// <summary>
@@ -424,8 +512,8 @@ namespace OutlineTextSample
         {
             EnsureFormattedText();
 
-            formattedText.MaxTextWidth = arrangeSize.Width;
-            formattedText.MaxTextHeight = arrangeSize.Height;
+            formattedText.MaxTextWidth = arrangeSize.Width - Padding.Left - Padding.Right;
+            formattedText.MaxTextHeight = arrangeSize.Height - Padding.Top - Padding.Bottom;
 
             textGeometry = null;
 
@@ -483,7 +571,31 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// <see cref="formattedText"/> を生成します。
+        /// 
+        /// </summary>
+        /// <param name="dependencyObject"></param>
+        /// <param name="e"></param>
+        private static void PaddingUpdated(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
+        {
+            OutlineText outlinedTextBlock = (OutlineText)dependencyObject;
+
+            outlinedTextBlock.OnPaddingUpdated(e);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="e"></param>
+        protected virtual void OnPaddingUpdated(DependencyPropertyChangedEventArgs e)
+        {
+            textGeometry = null;
+
+            InvalidateMeasure();
+            InvalidateVisual();
+        }
+
+        /// <summary>
+        /// <see cref="formattedText"/> を再評価します。
         /// </summary>
         protected virtual void EnsureFormattedText()
         {
@@ -535,7 +647,7 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// <see cref="textGeometry"/> を生成します。
+        /// <see cref="textGeometry"/> を再評価します。
         /// </summary>
         protected virtual void EnsureGeometry()
         {
@@ -545,7 +657,34 @@ namespace OutlineTextSample
             }
 
             EnsureFormattedText();
-            textGeometry = formattedText.BuildGeometry(new Point());
+            textGeometry = formattedText.BuildGeometry(new Point(Padding.Left, Padding.Top));
+
+            if (ClipBackgroundToText == true)
+            {
+                switch (TextAlignment)
+                {
+                    case TextAlignment.Left:
+                        backgroundRect = new Rect(0, 0, formattedText.Width + Padding.Left + Padding.Right, formattedText.Height + Padding.Top + Padding.Bottom);
+                        break;
+                    case TextAlignment.Right:
+                        backgroundRect = new Rect(ActualWidth - formattedText.Width - Padding.Left - Padding.Right, 0, formattedText.Width + Padding.Left + Padding.Right, formattedText.Height + Padding.Top + Padding.Bottom);
+                        break;
+                    case TextAlignment.Center:
+                        backgroundRect = new Rect((ActualWidth - formattedText.Width - Padding.Left - Padding.Right) / 2.0D, 0, formattedText.Width + Padding.Left + Padding.Right, formattedText.Height + Padding.Top + Padding.Bottom);
+                        break;
+                    case TextAlignment.Justify:
+                        backgroundRect = new Rect(0, 0, ActualWidth, formattedText.Height + Padding.Top + Padding.Bottom);
+                        break;
+                    default:
+                        // 通過することはない
+                        break;
+                }
+            }
+            else
+            {
+                // Element の領域背景に色を付ける場合(TextBlock 互換)
+                backgroundRect = new Rect(0, 0, ActualWidth, ActualHeight);
+            }
         }
 
         #endregion

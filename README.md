@@ -12,8 +12,4 @@ http://astel-labs.net/blog/diary/2012/05/06-1.html
 
 XML コメント対応
 
-Background 実装
-
-Padding 対応実装
-
-Hyperlink の実装(指カーソル、ホバー、プレス)
+可能なら Hyperlink っぽい実装(指カーソル、ホバー、プレス)

@@ -8,11 +8,11 @@
         Title="MainWindow" Height="350" Width="525">
     <Grid Background="#ff606060">
         <StackPanel>
-            <local:OutlineText Foreground="White" FontFamily="MS Gothic" FontSize="50" FontWeight="Normal" TextWrapping="Wrap"
-                               OutlineThickness="2" Outline="#80000000"
-                               Text="Hello world!漢字123" />
-            <TextBlock Foreground="White" FontFamily="MS Gothic" FontSize="50" FontWeight="Normal" TextWrapping="Wrap"
-                               Text="Hello world!漢字123" />
+            <local:OutlineText Background="Tomato" Foreground="White" FontFamily="MS Gothic" FontSize="50" FontWeight="Normal" TextWrapping="Wrap"
+                               OutlineThickness="2" Outline="#a0000000" Cursor="Hand"
+                               Text="Hello world!漢字123" Padding="2" />
+            <TextBlock Background="Tomato" Foreground="White"  FontFamily="MS Gothic" FontSize="50" FontWeight="Normal" TextWrapping="Wrap"
+                               Text="Hello world!漢字123" Padding="0"/>
         </StackPanel>
     </Grid>
 </Window>
