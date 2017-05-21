@@ -35,7 +35,12 @@ namespace OutlineTextSample
         #region 定数
 
         /// <summary>
-        /// デフォルトの縁取りの幅を定義します。
+        /// テキストの最大幅を表します。
+        /// </summary>
+        private const double MAX_TEXT_WIDTH = 3579139.0D;
+
+        /// <summary>
+        /// 既定の縁取りの幅を表します。
         /// </summary>
         private const double DEFAULT_OUTLINE_TICKNESS = 1.0D;
 
@@ -54,7 +59,7 @@ namespace OutlineTextSample
         protected Geometry textGeometry = null;
 
         /// <summary>
-        /// 
+        /// コンテンツ領域の背景を保持します。
         /// </summary>
         protected Rect backgroundRect;
 
@@ -74,7 +79,7 @@ namespace OutlineTextSample
         /// </summary>
         public static readonly DependencyProperty TextProperty = DependencyProperty.Register(
             "Text", typeof(string), typeof(OutlineText),
-            new FrameworkPropertyMetadata(FormattedTextInvalidated));
+            new FrameworkPropertyMetadata(string.Empty, FormattedTextInvalidated));
 
         /// <summary>
         /// TextAlignment 依存関係プロパティを識別します。このフィールドは読み取り専用です。
@@ -181,8 +186,10 @@ namespace OutlineTextSample
         #region プロパティ
 
         /// <summary>
-        /// 取得または設定、 Brush コンテンツ領域の背景の塗りつぶしに使用します。
+        /// コンテンツ領域の背景の塗りつぶしに使用する <see cref="Brush"/> を取得または設定します。
         /// </summary>
+        /// <value>コンテンツ領域の背景の塗りつぶしに使用する <see cref="Brush"/>。既定値は、<c>null</c> です。</value>
+        [Description("コンテンツ領域の背景の塗りつぶしに使用する Brush を取得または設定します。")]
         public Brush Background
         {
             get
@@ -198,6 +205,7 @@ namespace OutlineTextSample
         /// <summary>
         /// <see cref="OutlineText"/> に対して、優先される最上位レベルのフォント ファミリを取得または設定します。
         /// </summary>
+        [Category("Font")]
         public FontFamily FontFamily
         {
             get
@@ -211,9 +219,10 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// TextBlock に対して、最上位レベルのフォント サイズを取得または設定します。
+        /// <see cref="OutlineText"/> に対して、最上位レベルのフォント サイズを取得または設定します。
         /// </summary>
         [TypeConverter(typeof(FontSizeConverter))]
+        [Category("Font")]
         public double FontSize
         {
             get
@@ -227,8 +236,9 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// TextBlock の最上位レベルのフォント伸縮特性を取得または設定します。
+        /// <see cref="OutlineText"/> の最上位レベルのフォント伸縮特性を取得または設定します。
         /// </summary>
+        [Category("Font")]
         public FontStretch FontStretch
         {
             get
@@ -242,8 +252,9 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// TextBlock に対して、最上位レベルのフォント スタイルを取得または設定します。
+        /// <see cref="OutlineText"/> に対して、最上位レベルのフォント スタイルを取得または設定します。
         /// </summary>
+        [Category("Font")]
         public FontStyle FontStyle
         {
             get
@@ -257,8 +268,9 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// TextBlock に対して、最上位レベルのフォントの太さを取得または設定します。
+        /// <see cref="OutlineText"/> に対して、最上位レベルのフォントの太さを取得または設定します。
         /// </summary>
+        [Category("Font")]
         public FontWeight FontWeight
         {
             get
@@ -274,6 +286,8 @@ namespace OutlineTextSample
         /// <summary>
         /// <see cref="OutlineText"/> のテキスト コンテンツに適用する <see cref="Brush"/> を取得または設定します。
         /// </summary>
+        /// <value>テキスト コンテンツに適用するために使用するブラシ。 既定値は、<see cref="Brushes.Black"/> です。</value>
+        [Description("テキスト コンテンツに適用する Brush を取得または設定します。")]
         public Brush Foreground
         {
             get
@@ -289,6 +303,8 @@ namespace OutlineTextSample
         /// <summary>
         /// <see cref="OutlineText"/> のテキスト コンテンツの縁取りに適用する <see cref="Brush"/> を取得または設定します。
         /// </summary>
+        /// <value>テキスト コンテンツの縁取りに適用するために使用するブラシ。 既定値は、<c>null</c> です。</value>
+        [Description("テキスト コンテンツの縁取りに適用する Brush を取得または設定します。")]
         public Brush Outline
         {
             get
@@ -304,6 +320,7 @@ namespace OutlineTextSample
         /// <summary>
         /// <see cref="OutlineText"/> のテキスト コンテンツの縁取りに適用する幅を取得または設定します。
         /// </summary>
+        [Category("Appearance")]
         public double OutlineThickness
         {
             get
@@ -319,6 +336,7 @@ namespace OutlineTextSample
         /// <summary>
         /// <see cref="OutlineText"/> のテキスト コンテンツの縁取りに適用する <see cref="Visibility"/> を取得または設定します。
         /// </summary>
+        [Category("Appearance")]
         public Visibility OutlineVisibility
         {
             get
@@ -332,8 +350,9 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// 取得または設定のテキストの内容、 TextBlockです。
+        /// <see cref="OutlineText"/> のテキスト コンテンツを取得または設定します。
         /// </summary>
+        [Description("テキスト コンテンツを取得または設定します。")]
         public string Text
         {
             get
@@ -349,6 +368,7 @@ namespace OutlineTextSample
         /// <summary>
         /// テキスト コンテンツの水平方向の配置を示す値を取得または設定します。
         /// </summary>
+        [Category("Text")]
         public TextAlignment TextAlignment
         {
             get
@@ -364,6 +384,7 @@ namespace OutlineTextSample
         /// <summary>
         /// 取得または設定、 TextDecorationCollection のテキストに適用する効果を含む、 TextBlockです。
         /// </summary>
+        [Category("Text")]
         public TextDecorationCollection TextDecorations
         {
             get
@@ -407,8 +428,10 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// 
+        /// コンテンツ領域の境界と <see cref="OutlineText"/> によって表示されるコンテンツとの間に埋め込むスペースの幅を示す値を取得または設定します。
         /// </summary>
+        /// <value>適用する埋め込みの量を指定する <see cref="Thickness"/> 構造体。デバイス非依存のピクセル単位で指定します。 既定値は、<c>0</c> です。</value>
+        [Category("Layout")]
         public Thickness Padding
         {
             get
@@ -422,8 +445,10 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// 
+        /// 背景をテキストに合わせるかどうかを表す値を取得または設定します。
         /// </summary>
+        /// <value>背景をテキストに合わせるかどうかを表す値。既定値は、<c>false</c> です。</value>
+        [Category("Appearance")]
         public bool ClipBackgroundToText
         {
             get
@@ -441,7 +466,7 @@ namespace OutlineTextSample
         #region コンストラクタ
 
         /// <summary>
-        /// <see cref="OutlineText"/> の新しいインスタンスを初期化します。
+        /// <see cref="OutlineText"/> クラスの新しいインスタンスを初期化します。
         /// </summary>
         public OutlineText()
         {
@@ -453,9 +478,9 @@ namespace OutlineTextSample
         #region メソッド
 
         /// <summary>
-        /// 内容を表示、 TextBlockです。
+        /// <see cref="OutlineText"/> の内容を描画します。
         /// </summary>
-        /// <param name="drawingContext">DrawingContext にコントロールの表示にします。</param>
+        /// <param name="drawingContext">特定の要素の描画の手順です。 このコンテキストは、レイアウト システムで提供されています。</param>
         protected override void OnRender(DrawingContext drawingContext)
         {
             EnsureGeometry();
@@ -466,64 +491,73 @@ namespace OutlineTextSample
                 drawingContext.DrawRectangle(Background, null, backgroundRect);
             }
 
+            if (string.IsNullOrEmpty(Text) == true)
+            {
+                return;
+            }
+
             // 縁取りの描画
             if ((OutlineVisibility == Visibility.Visible) && (Outline != null) && (OutlineThickness > 0))
             {
                 // DrawGeometry はパスの中心から OutlineThickness の太さで描画するので、
                 // 外側の太さとしては、2 倍にして描画させる
 
-                //GeometryGroup geometryGroup = new GeometryGroup();
-                //geometryGroup.Children.Add(textGeometry);
-                //geometryGroup.Children.Add(new LineGeometry(new Point(textGeometry.Bounds.Left, textGeometry.Bounds.Bottom- 2), new Point(textGeometry.Bounds.Right, textGeometry.Bounds.Bottom - 2)));
-
                 drawingContext.DrawGeometry(null, new Pen(Outline, OutlineThickness * 2), textGeometry);
             }
-
-            //drawingContext.DrawLine(new Pen(Foreground, OutlineThickness), new Point(textGeometry.Bounds.Left + 1, textGeometry.Bounds.Bottom - 2), new Point(textGeometry.Bounds.Right - 1, textGeometry.Bounds.Bottom - 2));
 
             // DrawGeometry は ClearType が効かないので、改めて文字を描画する
             drawingContext.DrawText(formattedText, new Point(Padding.Left, Padding.Top));
         }
 
         /// <summary>
-        /// 再を測定すると呼ばれる、 TextBlockです。
+        /// 子要素に必要なレイアウトのサイズを測定し、<see cref="OutlineText"/> のサイズを決定します。
         /// </summary>
-        /// <param name="constraint">Size のサイズに対する制約を指定する構造体、 TextBlockです。</param>
-        /// <returns>Size 構造体の新しいサイズを示す、 TextBlockです。</returns>
-        protected override Size MeasureOverride(Size constraint)
+        /// <param name="availableSize">
+        /// この要素が子要素に提供できる使用可能なサイズ。
+        /// あらゆるコンテンツに要素がサイズを合わせることを示す値として、無限大を指定できます。
+        /// </param>
+        /// <returns>子要素のサイズの計算に基づいて、この要素が判断したレイアウト時に必要なサイズ。</returns>
+        protected override Size MeasureOverride(Size availableSize)
         {
             EnsureFormattedText();
 
-            formattedText.MaxTextWidth = Math.Min(3579139, constraint.Width - Padding.Left - Padding.Right);
-            formattedText.MaxTextHeight = constraint.Height - Padding.Top - Padding.Bottom;
+            if (string.IsNullOrEmpty(Text) == true)
+            {
+                return new Size(Padding.Left + Padding.Right, Padding.Top + Padding.Bottom);
+            }
+
+            formattedText.MaxTextWidth = Math.Min(MAX_TEXT_WIDTH, availableSize.Width - Padding.Left - Padding.Right);
+            formattedText.MaxTextHeight = availableSize.Height - Padding.Top - Padding.Bottom;
 
             return new Size(formattedText.Width + Padding.Left + Padding.Right, formattedText.Height + Padding.Top + Padding.Bottom);
         }
 
         /// <summary>
-        /// 子要素を配置しのサイズを決定、 TextBlockです。
+        /// 子要素を配置し、<see cref="OutlineText"/> のサイズを決定します。
         /// </summary>
-        /// <param name="arrangeSize">
-        /// Size ホストの親要素の中を TextBlock 自体とその子要素を配置に使用する必要があります。 
-        /// サイズ制約とこの要求のサイズに影響を与える可能性があります。
-        /// </param>
-        /// <returns>実際、 Size 要素の配置に使用します。</returns>
-        protected override Size ArrangeOverride(Size arrangeSize)
+        /// <param name="finalSize">この要素が要素自体と子を配置するために使用する親の末尾の領域。</param>
+        /// <returns>使用する実際のサイズ。</returns>
+        protected override Size ArrangeOverride(Size finalSize)
         {
             EnsureFormattedText();
 
-            formattedText.MaxTextWidth = arrangeSize.Width - Padding.Left - Padding.Right;
-            formattedText.MaxTextHeight = arrangeSize.Height - Padding.Top - Padding.Bottom;
+            if (string.IsNullOrEmpty(Text) == true)
+            {
+                return finalSize;
+            }
+
+            formattedText.MaxTextWidth = finalSize.Width - Padding.Left - Padding.Right;
+            formattedText.MaxTextHeight = finalSize.Height - Padding.Top - Padding.Bottom;
 
             textGeometry = null;
 
-            return arrangeSize;
+            return finalSize;
         }
 
         /// <summary>
         /// <see cref="formattedText"/> が無効になった際に発生します。
         /// </summary>
-        /// <param name="dependencyObject">プロパティの値が変更された System.Windows.DependencyObject。</param>
+        /// <param name="dependencyObject">プロパティの値が変更された <see cref="DependencyObject"/>。</param>
         /// <param name="e">このプロパティの有効値に対する変更を追跡するイベントによって発行されるイベント データ。</param>
         private static void FormattedTextInvalidated(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
         {
@@ -548,7 +582,7 @@ namespace OutlineTextSample
         /// <summary>
         /// <see cref="formattedText"/> が更新された際に発生します。
         /// </summary>
-        /// <param name="dependencyObject">プロパティの値が変更された System.Windows.DependencyObject。</param>
+        /// <param name="dependencyObject">プロパティの値が変更された <see cref="DependencyObject"/>。</param>
         /// <param name="e">このプロパティの有効値に対する変更を追跡するイベントによって発行されるイベント データ。</param>
         private static void FormattedTextUpdated(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
         {
@@ -571,10 +605,10 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// 
+        /// <see cref="Padding"/> が更新された際に発生します。
         /// </summary>
-        /// <param name="dependencyObject"></param>
-        /// <param name="e"></param>
+        /// <param name="dependencyObject">プロパティの値が変更された <see cref="DependencyObject"/>。</param>
+        /// <param name="e">このプロパティの有効値に対する変更を追跡するイベントによって発行されるイベント データ。</param>
         private static void PaddingUpdated(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
         {
             OutlineText outlinedTextBlock = (OutlineText)dependencyObject;
@@ -583,9 +617,9 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// 
+        /// <see cref="Padding"/> が更新された際に発生します。
         /// </summary>
-        /// <param name="e"></param>
+        /// <param name="e">このプロパティの有効値に対する変更を追跡するイベントによって発行されるイベント データ。</param>
         protected virtual void OnPaddingUpdated(DependencyPropertyChangedEventArgs e)
         {
             textGeometry = null;
@@ -599,7 +633,7 @@ namespace OutlineTextSample
         /// </summary>
         protected virtual void EnsureFormattedText()
         {
-            if (formattedText != null || Text == null)
+            if ((formattedText != null) || (string.IsNullOrEmpty(Text) == true))
             {
                 return;
             }
@@ -657,6 +691,21 @@ namespace OutlineTextSample
             }
 
             EnsureFormattedText();
+
+            if (string.IsNullOrEmpty(Text) == true)
+            {
+                if (ClipBackgroundToText == true)
+                {
+                    backgroundRect = new Rect();
+                }
+                else
+                {
+                    backgroundRect = new Rect(0, 0, ActualWidth, ActualHeight);
+                }
+
+                return;
+            }
+
             textGeometry = formattedText.BuildGeometry(new Point(Padding.Left, Padding.Top));
 
             if (ClipBackgroundToText == true)
