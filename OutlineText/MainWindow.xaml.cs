@@ -86,21 +86,21 @@ namespace OutlineTextSample
         /// </summary>
         public static readonly DependencyProperty TextAlignmentProperty = DependencyProperty.Register(
             "TextAlignment", typeof(TextAlignment), typeof(OutlineText),
-            new FrameworkPropertyMetadata(FormattedTextUpdated));
+            new FrameworkPropertyMetadata(TextAlignment.Left, FormattedTextUpdated));
 
         /// <summary>
         /// TextDecorations 依存関係プロパティを識別します。このフィールドは読み取り専用です。
         /// </summary>
         public static readonly DependencyProperty TextDecorationsProperty = DependencyProperty.Register(
             "TextDecorations", typeof(TextDecorationCollection), typeof(OutlineText),
-            new FrameworkPropertyMetadata(FormattedTextUpdated));
+            new FrameworkPropertyMetadata(null, FormattedTextUpdated));
 
         /// <summary>
         /// TextTrimming 依存関係プロパティを識別します。このフィールドは読み取り専用です。
         /// </summary>
         public static readonly DependencyProperty TextTrimmingProperty = DependencyProperty.Register(
             "TextTrimming", typeof(TextTrimming), typeof(OutlineText),
-            new FrameworkPropertyMetadata(FormattedTextUpdated));
+            new FrameworkPropertyMetadata(TextTrimming.None, FormattedTextUpdated));
 
         /// <summary>
         /// TextWrapping 依存関係プロパティを識別します。このフィールドは読み取り専用です。
@@ -203,9 +203,10 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// <see cref="OutlineText"/> に対して、優先される最上位レベルのフォント ファミリを取得または設定します。
+        /// フォント ファミリを取得または設定します。
         /// </summary>
         [Category("Font")]
+        [Description("フォント ファミリを取得または設定します。")]
         public FontFamily FontFamily
         {
             get
@@ -219,10 +220,11 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// <see cref="OutlineText"/> に対して、最上位レベルのフォント サイズを取得または設定します。
+        /// フォント サイズを取得または設定します。
         /// </summary>
         [TypeConverter(typeof(FontSizeConverter))]
         [Category("Font")]
+        [Description("フォント サイズを取得または設定します。")]
         public double FontSize
         {
             get
@@ -236,9 +238,10 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// <see cref="OutlineText"/> の最上位レベルのフォント伸縮特性を取得または設定します。
+        /// フォント伸縮特性を取得または設定します。
         /// </summary>
         [Category("Font")]
+        [Description("フォント伸縮特性を取得または設定します。")]
         public FontStretch FontStretch
         {
             get
@@ -252,9 +255,10 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// <see cref="OutlineText"/> に対して、最上位レベルのフォント スタイルを取得または設定します。
+        /// フォント スタイルを取得または設定します。
         /// </summary>
         [Category("Font")]
+        [Description("フォント スタイルを取得または設定します。")]
         public FontStyle FontStyle
         {
             get
@@ -268,9 +272,10 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// <see cref="OutlineText"/> に対して、最上位レベルのフォントの太さを取得または設定します。
+        /// フォントの太さを取得または設定します。
         /// </summary>
         [Category("Font")]
+        [Description("フォントの太さを取得または設定します。")]
         public FontWeight FontWeight
         {
             get
@@ -284,9 +289,9 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// <see cref="OutlineText"/> のテキスト コンテンツに適用する <see cref="Brush"/> を取得または設定します。
+        /// テキスト コンテンツに適用する <see cref="Brush"/> を取得または設定します。
         /// </summary>
-        /// <value>テキスト コンテンツに適用するために使用するブラシ。 既定値は、<see cref="Brushes.Black"/> です。</value>
+        /// <value>テキスト コンテンツに適用するために使用するブラシ。既定値は、<see cref="Brushes.Black"/> です。</value>
         [Description("テキスト コンテンツに適用する Brush を取得または設定します。")]
         public Brush Foreground
         {
@@ -301,9 +306,9 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// <see cref="OutlineText"/> のテキスト コンテンツの縁取りに適用する <see cref="Brush"/> を取得または設定します。
+        /// テキスト コンテンツの縁取りに適用する <see cref="Brush"/> を取得または設定します。
         /// </summary>
-        /// <value>テキスト コンテンツの縁取りに適用するために使用するブラシ。 既定値は、<c>null</c> です。</value>
+        /// <value>テキスト コンテンツの縁取りに適用するために使用するブラシ。既定値は、<c>null</c> です。</value>
         [Description("テキスト コンテンツの縁取りに適用する Brush を取得または設定します。")]
         public Brush Outline
         {
@@ -318,9 +323,11 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// <see cref="OutlineText"/> のテキスト コンテンツの縁取りに適用する幅を取得または設定します。
+        /// テキスト コンテンツの縁取りに適用する幅を取得または設定します。
         /// </summary>
+        /// <value>テキスト コンテンツの縁取りに適用する幅。既定値は、<see cref="DEFAULT_OUTLINE_TICKNESS"/> です。</value>
         [Category("Appearance")]
+        [Description("テキスト コンテンツの縁取りに適用する幅を取得または設定します。")]
         public double OutlineThickness
         {
             get
@@ -334,9 +341,11 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// <see cref="OutlineText"/> のテキスト コンテンツの縁取りに適用する <see cref="Visibility"/> を取得または設定します。
+        /// テキスト コンテンツの縁取りに適用する <see cref="Visibility"/> を取得または設定します。
         /// </summary>
+        /// <value>テキスト コンテンツの縁取りに適用する <see cref="Visibility"/>。既定値は、<see cref="Visibility.Visible"/> です。</value>
         [Category("Appearance")]
+        [Description("テキスト コンテンツの縁取りに適用する Visibility を取得または設定します。")]
         public Visibility OutlineVisibility
         {
             get
@@ -350,7 +359,7 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// <see cref="OutlineText"/> のテキスト コンテンツを取得または設定します。
+        /// テキスト コンテンツを取得または設定します。
         /// </summary>
         [Description("テキスト コンテンツを取得または設定します。")]
         public string Text
@@ -368,7 +377,9 @@ namespace OutlineTextSample
         /// <summary>
         /// テキスト コンテンツの水平方向の配置を示す値を取得または設定します。
         /// </summary>
+        /// <value>テキスト コンテンツの水平方向の配置を示す <see cref="TextAlignment"/>。既定値は、<see cref="TextAlignment.Left"/> です。</value>
         [Category("Text")]
+        [Description("テキスト コンテンツの水平方向の配置を示す値を取得または設定します。")]
         public TextAlignment TextAlignment
         {
             get
@@ -382,9 +393,11 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// 取得または設定、 TextDecorationCollection のテキストに適用する効果を含む、 TextBlockです。
+        /// テキストに適用する効果を取得または設定します。
         /// </summary>
+        /// <value>テキスト コンテンツの水平方向の配置を示す <see cref="TextDecorationCollection"/>。既定値は、<c>null</c> (テキスト装飾は適用されません)。</value>
         [Category("Text")]
+        [Description("テキストに適用する効果を取得または設定します。")]
         public TextDecorationCollection TextDecorations
         {
             get
@@ -400,6 +413,8 @@ namespace OutlineTextSample
         /// <summary>
         /// コンテンツ領域いっぱいになったときに使用するテキストのトリミング動作を取得または設定します。
         /// </summary>
+        /// <value>コンテンツ領域いっぱいになったときに使用する <see cref="TextTrimming"/>。既定値は、<see cref="TextTrimming.None"/> です。</value>
+        [Description("コンテンツ領域いっぱいになったときに使用するテキストのトリミング動作を取得または設定します。")]
         public TextTrimming TextTrimming
         {
             get
@@ -413,8 +428,10 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// 取得または設定する方法、 TextBlock テキストをラップする必要があります。
+        /// テキストをラップするかどうかを取得または設定します。
         /// </summary>
+        /// <value>テキストをラップするかどうかを指定する <see cref="TextWrapping"/>。既定値は、<see cref="TextWrapping.NoWrap"/> です。</value>
+        [Description("テキストをラップするかどうかを取得または設定します。")]
         public TextWrapping TextWrapping
         {
             get
@@ -428,10 +445,11 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// コンテンツ領域の境界と <see cref="OutlineText"/> によって表示されるコンテンツとの間に埋め込むスペースの幅を示す値を取得または設定します。
+        /// コンテンツ領域の境界とコンテンツとの間に埋め込むスペースの幅を示す値を取得または設定します。
         /// </summary>
         /// <value>適用する埋め込みの量を指定する <see cref="Thickness"/> 構造体。デバイス非依存のピクセル単位で指定します。 既定値は、<c>0</c> です。</value>
         [Category("Layout")]
+        [Description("コンテンツ領域の境界とコンテンツとの間に埋め込むスペースの幅を示す値を取得または設定します。")]
         public Thickness Padding
         {
             get
@@ -445,10 +463,11 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// 背景をテキストに合わせるかどうかを表す値を取得または設定します。
+        /// 背景をテキスト領域に合わせるかどうかを表す値を取得または設定します。
         /// </summary>
-        /// <value>背景をテキストに合わせるかどうかを表す値。既定値は、<c>false</c> です。</value>
+        /// <value>背景をテキスト領域に合わせるかどうかを表す値。既定値は、<c>false</c> です。</value>
         [Category("Appearance")]
+        [Description("背景をテキスト領域に合わせるかどうかを表す値を取得または設定します。")]
         public bool ClipBackgroundToText
         {
             get
@@ -502,7 +521,12 @@ namespace OutlineTextSample
                 // DrawGeometry はパスの中心から OutlineThickness の太さで描画するので、
                 // 外側の太さとしては、2 倍にして描画させる
 
-                drawingContext.DrawGeometry(null, new Pen(Outline, OutlineThickness * 2), textGeometry);
+                Pen pen = new Pen(Outline, OutlineThickness * 2)
+                {
+                    LineJoin = PenLineJoin.Round
+                };
+
+                drawingContext.DrawGeometry(null, pen, textGeometry);
             }
 
             // DrawGeometry は ClearType が効かないので、改めて文字を描画する

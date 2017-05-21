@@ -6,13 +6,24 @@
         xmlns:local="clr-namespace:OutlineTextSample"
         mc:Ignorable="d"
         Title="MainWindow" Height="350" Width="525">
+    
+    <Window.Resources>
+        
+        <!-- スタイルを使ってデフォルト値を変更することも可能 -->
+        <Style x:Key="OutlineTextStyle" TargetType="{x:Type local:OutlineText}">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Outline" Value="#80000000"/>
+        </Style>
+        
+    </Window.Resources>
+    
     <Grid Background="#ff606060">
         <StackPanel>
-            <local:OutlineText Background="Tomato" Foreground="White" FontFamily="MS Gothic" FontSize="50" FontWeight="Normal" TextWrapping="Wrap"
-                               OutlineThickness="2" Outline="#a0000000" Padding="0"
+            <local:OutlineText Background="Tomato" FontSize="50" TextWrapping="Wrap"
+                               OutlineThickness="3" Padding="4" Style="{DynamicResource OutlineTextStyle}"
                                Text="Hello world!漢字123"/>
-            <TextBlock Background="Tomato" Foreground="White" FontFamily="MS Gothic" FontSize="50" FontWeight="Normal" TextWrapping="Wrap"
-                               Text="Hello world!漢字123" Padding="0"/>
+            <TextBlock Background="Tomato" Foreground="White" FontSize="50" FontWeight="Normal" TextWrapping="Wrap"
+                               Text="Hello world!漢字123" Padding="4"/>
         </StackPanel>
     </Grid>
 </Window>
