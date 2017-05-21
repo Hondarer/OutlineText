@@ -20,8 +20,8 @@
     <Grid Background="#ff606060">
         <StackPanel>
             <local:OutlineText Background="Tomato" FontSize="50" TextWrapping="Wrap"
-                               OutlineThickness="3" Padding="4" Style="{DynamicResource OutlineTextStyle}"
-                               Text="Hello world!漢字123"/>
+                               OutlineThickness="5" Padding="4" Style="{DynamicResource OutlineTextStyle}"
+                               Text="Hello world!漢字123" />
             <TextBlock Background="Tomato" Foreground="White" FontSize="50" FontWeight="Normal" TextWrapping="Wrap"
                                Text="Hello world!漢字123" Padding="4"/>
         </StackPanel>
