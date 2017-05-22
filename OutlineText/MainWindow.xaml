@@ -18,9 +18,12 @@
     </Window.Resources>
     
     <Grid Background="#ff606060">
+        <!--<local:OutlineText Background="Tomato" Foreground="White" FontSize="50" Padding="4"
+                               OutlineThickness="5" Outline="#80000000"
+                               Text="Hello world!漢字123" />-->
         <StackPanel>
             <local:OutlineText Background="Tomato" Foreground="White" FontSize="50" Padding="4"
-                               OutlineThickness="5" Outline="#80000000"
+                               OutlineThickness="4" Outline="#80000000"
                                Text="Hello world!漢字123" />
             <TextBlock Background="Tomato" Foreground="White" FontSize="50" Padding="4"
                                Text="Hello world!漢字123"/>

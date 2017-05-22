@@ -504,6 +504,9 @@ namespace OutlineTextSample
         {
             EnsureGeometry();
 
+            // 描画があふれないようにクリップする
+            drawingContext.PushClip(new RectangleGeometry(new Rect(0, 0, ActualWidth, ActualHeight)));
+
             // 背景の描画
             if (Background != null)
             {
@@ -550,7 +553,27 @@ namespace OutlineTextSample
                 return new Size(Padding.Left + Padding.Right, Padding.Top + Padding.Bottom);
             }
 
-            formattedText.MaxTextWidth = Math.Min(MAX_TEXT_WIDTH, availableSize.Width - Padding.Left - Padding.Right);
+            // FormattedText の幅の決定処理 TextBlock のそれと挙動を同じにする
+            if (TextWrapping == TextWrapping.NoWrap)
+            {
+                // NoWrap のときは、いったん最大幅にもっていく
+                formattedText.MaxTextWidth = MAX_TEXT_WIDTH;
+                if (formattedText.Width <= (availableSize.Width - Padding.Left - Padding.Right))
+                {
+                    // 収まるようであれば、親の大きさにする
+                    formattedText.MaxTextWidth = availableSize.Width - Padding.Left - Padding.Right;
+                }
+                else
+                {
+                    // 収まらないときは、TextAlignment を Left にする
+                    formattedText.TextAlignment = TextAlignment.Left;
+                }
+            }
+            else
+            {
+                formattedText.MaxTextWidth = availableSize.Width - Padding.Left - Padding.Right;
+            }
+
             formattedText.MaxTextHeight = availableSize.Height - Padding.Top - Padding.Bottom;
 
             return new Size(formattedText.Width + Padding.Left + Padding.Right, formattedText.Height + Padding.Top + Padding.Bottom);
@@ -569,9 +592,6 @@ namespace OutlineTextSample
             {
                 return finalSize;
             }
-
-            formattedText.MaxTextWidth = finalSize.Width - Padding.Left - Padding.Right;
-            formattedText.MaxTextHeight = finalSize.Height - Padding.Top - Padding.Bottom;
 
             textGeometry = null;
 
@@ -666,7 +686,7 @@ namespace OutlineTextSample
                 Text,
                 CultureInfo.CurrentUICulture,
                 FlowDirection,
-                new Typeface(FontFamily, FontStyle, FontWeight, FontStretches.Normal),
+                new Typeface(FontFamily, FontStyle, FontWeight, FontStretch),
                 FontSize,
                 Brushes.Black);
 
