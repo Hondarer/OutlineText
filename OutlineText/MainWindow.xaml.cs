@@ -1,5 +1,4 @@
-﻿using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Documents;
@@ -61,7 +60,17 @@ namespace OutlineTextSample
         /// <summary>
         /// コンテンツ領域の背景を保持します。
         /// </summary>
-        protected Rect backgroundRect;
+        protected Rect? backgroundRect = null;
+
+        /// <summary>
+        /// <see cref="Padding"/> のうち、正の値を保持します。
+        /// </summary>
+        protected Thickness positivePadding = default(Thickness);
+
+        /// <summary>
+        /// <see cref="Padding"/> のうち、負の値を保持します。
+        /// </summary>
+        protected Thickness negativePadding = default(Thickness);
 
         #endregion
 
@@ -504,19 +513,24 @@ namespace OutlineTextSample
         {
             EnsureGeometry();
 
-            // 描画があふれないようにクリップする
-            drawingContext.PushClip(new RectangleGeometry(new Rect(0, 0, ActualWidth, ActualHeight)));
-
             // 背景の描画
             if (Background != null)
             {
-                drawingContext.DrawRectangle(Background, null, backgroundRect);
+                drawingContext.DrawRectangle(Background, null, (Rect)backgroundRect);
             }
 
             if (string.IsNullOrEmpty(Text) == true)
             {
                 return;
             }
+
+            // 描画があふれないようにクリップする
+            drawingContext.PushClip(new RectangleGeometry(
+                new Rect(
+                    -negativePadding.Left,
+                    -negativePadding.Top,
+                    ActualWidth + negativePadding.Left + negativePadding.Right,
+                    ActualHeight + negativePadding.Top + negativePadding.Bottom)));
 
             // 縁取りの描画
             if ((OutlineVisibility == Visibility.Visible) && (Outline != null) && (OutlineThickness > 0))
@@ -533,7 +547,7 @@ namespace OutlineTextSample
             }
 
             // DrawGeometry は ClearType が効かないので、改めて文字を描画する
-            drawingContext.DrawText(formattedText, new Point(Padding.Left, Padding.Top));
+            drawingContext.DrawText(formattedText, new Point(positivePadding.Left, positivePadding.Top));
         }
 
         /// <summary>
@@ -550,7 +564,7 @@ namespace OutlineTextSample
 
             if (string.IsNullOrEmpty(Text) == true)
             {
-                return new Size(Padding.Left + Padding.Right, Padding.Top + Padding.Bottom);
+                return new Size(positivePadding.Left + positivePadding.Right, positivePadding.Top + positivePadding.Bottom);
             }
 
             // FormattedText の幅の決定処理 TextBlock のそれと挙動を同じにする
@@ -558,25 +572,24 @@ namespace OutlineTextSample
             {
                 // NoWrap のときは、いったん最大幅にもっていく
                 formattedText.MaxTextWidth = MAX_TEXT_WIDTH;
-                if (formattedText.Width <= (availableSize.Width - Padding.Left - Padding.Right))
-                {
-                    // 収まるようであれば、親の大きさにする
-                    formattedText.MaxTextWidth = availableSize.Width - Padding.Left - Padding.Right;
-                }
-                else
+                if (formattedText.Width > (availableSize.Width - positivePadding.Left - positivePadding.Right))
                 {
                     // 収まらないときは、TextAlignment を Left にする
                     formattedText.TextAlignment = TextAlignment.Left;
                 }
+                // 親の大きさにする
+                formattedText.MaxTextWidth = availableSize.Width - positivePadding.Left - positivePadding.Right;
             }
             else
             {
-                formattedText.MaxTextWidth = availableSize.Width - Padding.Left - Padding.Right;
+                formattedText.MaxTextWidth = availableSize.Width - positivePadding.Left - positivePadding.Right;
             }
 
-            formattedText.MaxTextHeight = availableSize.Height - Padding.Top - Padding.Bottom;
+            formattedText.MaxTextHeight = availableSize.Height - positivePadding.Top - positivePadding.Bottom;
 
-            return new Size(formattedText.Width + Padding.Left + Padding.Right, formattedText.Height + Padding.Top + Padding.Bottom);
+            return new Size(
+                formattedText.Width + positivePadding.Left + positivePadding.Right,
+                formattedText.Height + positivePadding.Top + positivePadding.Bottom);
         }
 
         /// <summary>
@@ -618,6 +631,7 @@ namespace OutlineTextSample
         {
             formattedText = null;
             textGeometry = null;
+            backgroundRect = null;
 
             InvalidateMeasure();
             InvalidateVisual();
@@ -643,6 +657,7 @@ namespace OutlineTextSample
         {
             UpdateFormattedText();
             textGeometry = null;
+            backgroundRect = null;
 
             InvalidateMeasure();
             InvalidateVisual();
@@ -667,6 +682,107 @@ namespace OutlineTextSample
         protected virtual void OnPaddingUpdated(DependencyPropertyChangedEventArgs e)
         {
             textGeometry = null;
+            backgroundRect = null;
+
+            #region positivePadding の計算
+
+            positivePadding = Padding;
+
+            if (positivePadding.Left == double.NaN)
+            {
+                positivePadding.Left = 0;
+            }
+            else if (positivePadding.Left < 0)
+            {
+                positivePadding.Left = 0;
+            }
+
+            if (positivePadding.Top == double.NaN)
+            {
+                positivePadding.Top = 0;
+            }
+            else if (positivePadding.Top < 0)
+            {
+                positivePadding.Top = 0;
+            }
+
+            if (positivePadding.Right == double.NaN)
+            {
+                positivePadding.Right = 0;
+            }
+            else if (positivePadding.Right < 0)
+            {
+                positivePadding.Right = 0;
+            }
+
+            if (positivePadding.Bottom == double.NaN)
+            {
+                positivePadding.Bottom = 0;
+            }
+            else if (positivePadding.Bottom < 0)
+            {
+                positivePadding.Bottom = 0;
+            }
+
+            #endregion
+
+            #region negativePadding の計算
+
+            negativePadding = Padding;
+
+            if (negativePadding.Left == double.NaN)
+            {
+                negativePadding.Left = 0;
+            }
+            else if (negativePadding.Left > 0)
+            {
+                negativePadding.Left = 0;
+            }
+            else
+            {
+                negativePadding.Left *= -1;
+            }
+
+            if (negativePadding.Top == double.NaN)
+            {
+                negativePadding.Top = 0;
+            }
+            else if (negativePadding.Top > 0)
+            {
+                negativePadding.Top = 0;
+            }
+            else
+            {
+                negativePadding.Top *= -1;
+            }
+
+            if (negativePadding.Right == double.NaN)
+            {
+                negativePadding.Right = 0;
+            }
+            else if (negativePadding.Right > 0)
+            {
+                negativePadding.Right = 0;
+            }
+            else
+            {
+                negativePadding.Right *= -1;
+            }
+
+            if (negativePadding.Bottom == double.NaN)
+            {
+                negativePadding.Bottom = 0;
+            }
+            else if (negativePadding.Bottom > 0)
+            {
+                negativePadding.Bottom = 0;
+            }
+            else
+            {
+                negativePadding.Bottom *= -1;
+            }
+
+            #endregion
 
             InvalidateMeasure();
             InvalidateVisual();
@@ -729,54 +845,75 @@ namespace OutlineTextSample
         /// </summary>
         protected virtual void EnsureGeometry()
         {
-            if (textGeometry != null)
+            Size contentSize;
+
+            if (textGeometry == null)
             {
-                return;
+                EnsureFormattedText();
+
+                if (string.IsNullOrEmpty(Text) != true)
+                {
+                    textGeometry = formattedText.BuildGeometry(new Point(positivePadding.Left, positivePadding.Top));
+                }
             }
 
-            EnsureFormattedText();
-
-            if (string.IsNullOrEmpty(Text) == true)
+            if (formattedText == null)
             {
-                if (ClipBackgroundToText == true)
-                {
-                    backgroundRect = new Rect();
-                }
-                else
-                {
-                    backgroundRect = new Rect(0, 0, ActualWidth, ActualHeight);
-                }
-
-                return;
-            }
-
-            textGeometry = formattedText.BuildGeometry(new Point(Padding.Left, Padding.Top));
-
-            if (ClipBackgroundToText == true)
-            {
-                switch (TextAlignment)
-                {
-                    case TextAlignment.Left:
-                        backgroundRect = new Rect(0, 0, formattedText.Width + Padding.Left + Padding.Right, formattedText.Height + Padding.Top + Padding.Bottom);
-                        break;
-                    case TextAlignment.Right:
-                        backgroundRect = new Rect(ActualWidth - formattedText.Width - Padding.Left - Padding.Right, 0, formattedText.Width + Padding.Left + Padding.Right, formattedText.Height + Padding.Top + Padding.Bottom);
-                        break;
-                    case TextAlignment.Center:
-                        backgroundRect = new Rect((ActualWidth - formattedText.Width - Padding.Left - Padding.Right) / 2.0D, 0, formattedText.Width + Padding.Left + Padding.Right, formattedText.Height + Padding.Top + Padding.Bottom);
-                        break;
-                    case TextAlignment.Justify:
-                        backgroundRect = new Rect(0, 0, ActualWidth, formattedText.Height + Padding.Top + Padding.Bottom);
-                        break;
-                    default:
-                        // 通過することはない
-                        break;
-                }
+                contentSize = default(Size);
             }
             else
             {
-                // Element の領域背景に色を付ける場合(TextBlock 互換)
-                backgroundRect = new Rect(0, 0, ActualWidth, ActualHeight);
+                contentSize = new Size(formattedText.Width, formattedText.Height);
+            }
+
+            if (backgroundRect == null)
+            {
+                if (ClipBackgroundToText == true)
+                {
+                    switch (TextAlignment)
+                    {
+                        case TextAlignment.Left:
+                            backgroundRect = new Rect(
+                                -negativePadding.Left,
+                                -negativePadding.Top,
+                                contentSize.Width + positivePadding.Left + positivePadding.Right + negativePadding.Left + negativePadding.Right,
+                                contentSize.Height + positivePadding.Top + positivePadding.Bottom + negativePadding.Top + negativePadding.Bottom);
+                            break;
+                        case TextAlignment.Right:
+                            backgroundRect = new Rect(
+                                ActualWidth - contentSize.Width - positivePadding.Left - positivePadding.Right - negativePadding.Left,
+                                -negativePadding.Top,
+                                contentSize.Width + positivePadding.Left + positivePadding.Right + negativePadding.Left + negativePadding.Right,
+                                contentSize.Height + positivePadding.Top + positivePadding.Bottom + negativePadding.Top + negativePadding.Bottom);
+                            break;
+                        case TextAlignment.Center:
+                            backgroundRect = new Rect(
+                                (ActualWidth - contentSize.Width) / 2.0D - positivePadding.Left - negativePadding.Left,
+                                -negativePadding.Top,
+                                contentSize.Width + positivePadding.Left + positivePadding.Right + negativePadding.Left + negativePadding.Right,
+                                contentSize.Height + positivePadding.Top + positivePadding.Bottom + negativePadding.Top + negativePadding.Bottom);
+                            break;
+                        case TextAlignment.Justify:
+                            backgroundRect = new Rect(
+                                -negativePadding.Left,
+                                -negativePadding.Top,
+                                ActualWidth + negativePadding.Left + negativePadding.Right,
+                                contentSize.Height + positivePadding.Top + positivePadding.Bottom + negativePadding.Top + negativePadding.Bottom);
+                            break;
+                        default:
+                            // 通過することはない
+                            break;
+                    }
+                }
+                else
+                {
+                    // Element の領域背景に色を付ける場合(TextBlock 互換)
+                    backgroundRect = new Rect(
+                        -negativePadding.Left,
+                        -negativePadding.Top,
+                        ActualWidth + negativePadding.Left + negativePadding.Right,
+                        ActualHeight + negativePadding.Top + negativePadding.Bottom);
+                }
             }
         }
 
