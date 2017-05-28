@@ -22,10 +22,10 @@
                                OutlineThickness="4" Outline="#80000000"
                                Text="Hello world!漢字123" VerticalAlignment="Center" />-->
         <StackPanel Margin="0">
-            <local:OutlineText Background="Tomato" Foreground="White" FontSize="50" Padding="4"
+            <local:OutlineText Background="Tomato" Foreground="White" FontSize="50" Padding="4" Margin="0"
                                OutlineThickness="4" Outline="#80000000"
                                Text="Hello world!漢字123"/>
-            <TextBlock Background="Tomato" Foreground="White" FontSize="50" Padding="4"
+            <TextBlock Background="Tomato" Foreground="White" FontSize="50" Padding="4" Margin="0"
                                Text="Hello world!漢字123"/>
         </StackPanel>
     </Grid>
