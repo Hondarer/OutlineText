@@ -18,9 +18,9 @@
     </Window.Resources>
     
     <Grid Background="#ff606060">
-        <!--<local:OutlineText Background="Tomato" Foreground="White" FontSize="50" Padding="-50,-50,-50,-50"
+        <!--<local:OutlineText Background="Tomato" Foreground="White" FontSize="50" Padding="-10"
                                OutlineThickness="4" Outline="#80000000"
-                               Text="" ClipBackgroundToText="True" />-->
+                               Text="Hello world!漢字123" VerticalAlignment="Center" />-->
         <StackPanel Margin="0">
             <local:OutlineText Background="Tomato" Foreground="White" FontSize="50" Padding="4"
                                OutlineThickness="4" Outline="#80000000"

@@ -576,12 +576,26 @@ namespace OutlineTextSample
                 {
                     // 収まらないときは、TextAlignment を Left にする
                     formattedText.TextAlignment = TextAlignment.Left;
+
+                    if ((negativePadding.Left != 0) ||
+                        (negativePadding.Top != 0) ||
+                        (negativePadding.Right != 0) ||
+                        (negativePadding.Bottom != 0))
+                    {
+                        // 負の Padding が設定されている場合、親の大きさにする
+                        // (formattedText が大きいと、描画時に Actual なエリアでクリップされてしまうため、負の Padding をうまく描画できないため)
+                        formattedText.MaxTextWidth = availableSize.Width - positivePadding.Left - positivePadding.Right;
+                    }
                 }
-                // 親の大きさにする
-                formattedText.MaxTextWidth = availableSize.Width - positivePadding.Left - positivePadding.Right;
+                else
+                {
+                    // 親の大きさにする
+                    formattedText.MaxTextWidth = availableSize.Width - positivePadding.Left - positivePadding.Right;
+                }
             }
             else
             {
+                // 親の大きさにする
                 formattedText.MaxTextWidth = availableSize.Width - positivePadding.Left - positivePadding.Right;
             }
 
