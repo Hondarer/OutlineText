@@ -34,9 +34,14 @@ namespace OutlineTextSample
         #region 定数
 
         /// <summary>
-        /// テキストの最大幅を表します。
+        /// 要素の最大幅を表します。
         /// </summary>
         private const double MAX_TEXT_WIDTH = 3579139.0D;
+
+        /// <summary>
+        /// 要素の最大高さを表します。
+        /// </summary>
+        private const double MAX_TEXT_HEIGHT = 3579139.0D;
 
         /// <summary>
         /// 既定の縁取りの幅を表します。
@@ -88,7 +93,7 @@ namespace OutlineTextSample
         /// </summary>
         public static readonly DependencyProperty TextProperty = DependencyProperty.Register(
             "Text", typeof(string), typeof(OutlineText),
-            new FrameworkPropertyMetadata(string.Empty, FormattedTextInvalidated));
+            new FrameworkPropertyMetadata(null, FormattedTextInvalidated));
 
         /// <summary>
         /// TextAlignment 依存関係プロパティを識別します。このフィールドは読み取り専用です。
@@ -547,6 +552,10 @@ namespace OutlineTextSample
             }
 
             // DrawGeometry は ClearType が効かないので、改めて文字を描画する
+            // MEMO: Window の AllowsTransparency="True" とした場合、グレースケールになってしまう。
+            //       この場合、Window の各要素の CrearType は
+            //       RenderOptions.ClearTypeHint="Enabled" によって改善する部品もあるが、
+            //       OnRender の場合、ClearType に強制的に設定する方法が現状存在しない。
             drawingContext.DrawText(formattedText, new Point(positivePadding.Left, positivePadding.Top));
         }
 
@@ -562,11 +571,23 @@ namespace OutlineTextSample
         {
             EnsureFormattedText();
 
-            Size measuredSixze = default(Size);
+            Size measuredSize = default(Size);
+            double tmpMaxWidth = 0.0D;
+            double tmpMaxHeight = 0.0D;
+
+            // StackPanel などの要素にレイアウトした場合、Infinity になっているので補正を行う
+            if (double.IsInfinity(availableSize.Width) == true)
+            {
+                availableSize.Width = MAX_TEXT_WIDTH;
+            }
+            if (double.IsInfinity(availableSize.Height) == true)
+            {
+                availableSize.Height = MAX_TEXT_HEIGHT;
+            }
 
             if (string.IsNullOrEmpty(Text) == true)
             {
-                measuredSixze = new Size(positivePadding.Left + positivePadding.Right, positivePadding.Top + positivePadding.Bottom);
+                measuredSize = new Size(positivePadding.Left + positivePadding.Right, positivePadding.Top + positivePadding.Bottom);
             }
             else
             {
@@ -586,32 +607,50 @@ namespace OutlineTextSample
                             (negativePadding.Bottom != 0))
                         {
                             // 負の Padding が設定されている場合、親の大きさにする
-                            // (formattedText が大きいと、描画時に Actual なエリアでクリップされてしまうため、負の Padding をうまく描画できないため)
-                            formattedText.MaxTextWidth = availableSize.Width - positivePadding.Left - positivePadding.Right;
+                            // (formattedText が大きいと、描画時に Actual なエリアでクリップされてしまうため、負の Padding をうまく描画できない)
+                            tmpMaxWidth = availableSize.Width - positivePadding.Left - positivePadding.Right;
+                        }
+                        else
+                        {
+                            tmpMaxWidth = formattedText.MaxTextWidth;
                         }
                     }
                     else
                     {
+                        // TextAlignment の復元
+                        formattedText.TextAlignment = TextAlignment;
+
                         // 親の大きさにする
-                        formattedText.MaxTextWidth = availableSize.Width - positivePadding.Left - positivePadding.Right;
+                        tmpMaxWidth = availableSize.Width - positivePadding.Left - positivePadding.Right;
                     }
                 }
                 else
                 {
                     // 親の大きさにする
-                    formattedText.MaxTextWidth = availableSize.Width - positivePadding.Left - positivePadding.Right;
+                    tmpMaxWidth = availableSize.Width - positivePadding.Left - positivePadding.Right;
                 }
 
-                formattedText.MaxTextHeight = availableSize.Height - positivePadding.Top - positivePadding.Bottom;
+                tmpMaxHeight = availableSize.Height - positivePadding.Top - positivePadding.Bottom;
 
-                measuredSixze = new Size(
+                if (tmpMaxWidth <= 0)
+                {
+                    tmpMaxWidth = 1;
+                }
+                if (tmpMaxHeight <= 0)
+                {
+                    tmpMaxHeight = 1;
+                }
+                formattedText.MaxTextWidth = tmpMaxWidth;
+                formattedText.MaxTextHeight = tmpMaxHeight;
+
+                measuredSize = new Size(
                     formattedText.Width + positivePadding.Left + positivePadding.Right,
                     formattedText.Height + positivePadding.Top + positivePadding.Bottom);
             }
 
-            EnsureBackground(measuredSixze);
+            EnsureBackground(measuredSize);
 
-            return measuredSixze;
+            return measuredSize;
         }
 
         /// <summary>
@@ -637,9 +676,9 @@ namespace OutlineTextSample
         /// <param name="e">このプロパティの有効値に対する変更を追跡するイベントによって発行されるイベント データ。</param>
         private static void FormattedTextInvalidated(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
         {
-            OutlineText outlinedTextBlock = (OutlineText)dependencyObject;
+            OutlineText outlineText = (OutlineText)dependencyObject;
 
-            outlinedTextBlock.OnFormattedTextInvalidated(e);
+            outlineText.OnFormattedTextInvalidated(e);
         }
 
         /// <summary>
@@ -662,9 +701,9 @@ namespace OutlineTextSample
         /// <param name="e">このプロパティの有効値に対する変更を追跡するイベントによって発行されるイベント データ。</param>
         private static void FormattedTextUpdated(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
         {
-            OutlineText outlinedTextBlock = (OutlineText)dependencyObject;
+            OutlineText outlineText = (OutlineText)dependencyObject;
 
-            outlinedTextBlock.OnFormattedTextUpdated(e);
+            outlineText.OnFormattedTextUpdated(e);
         }
 
         /// <summary>
@@ -687,9 +726,9 @@ namespace OutlineTextSample
         /// <param name="e">このプロパティの有効値に対する変更を追跡するイベントによって発行されるイベント データ。</param>
         private static void PaddingUpdated(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
         {
-            OutlineText outlinedTextBlock = (OutlineText)dependencyObject;
+            OutlineText outlineText = (OutlineText)dependencyObject;
 
-            outlinedTextBlock.OnPaddingUpdated(e);
+            outlineText.OnPaddingUpdated(e);
         }
 
         /// <summary>
@@ -820,7 +859,8 @@ namespace OutlineTextSample
                 FlowDirection,
                 new Typeface(FontFamily, FontStyle, FontWeight, FontStretch),
                 FontSize,
-                Brushes.Black);
+                Brushes.Black,
+                1.0D); // MEMO: High DPI や Per-Monitor DPI に対応する場合は、この部分に適切な値を設定する必要がある。
 
             UpdateFormattedText();
         }
@@ -923,6 +963,7 @@ namespace OutlineTextSample
                         break;
                     default:
                         // 通過することはない
+                        // NOP
                         break;
                 }
             }
