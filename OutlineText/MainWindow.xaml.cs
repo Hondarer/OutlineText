@@ -25,8 +25,8 @@ namespace OutlineTextSample
     /// 縁取り付きのテキストを提供します。
     /// </summary>
     /// <remarks>
-    /// Based on "WPF – 文字の縁取りをする"
-    /// http://astel-labs.net/blog/diary/2012/05/06-1.html
+    /// <para>Based on "WPF – 文字の縁取りをする"</para>
+    /// <para>http://astel-labs.net/blog/diary/2012/05/06-1.html</para>
     /// </remarks>
     [ContentProperty("Text")]
     public class OutlineText : FrameworkElement
@@ -36,17 +36,25 @@ namespace OutlineTextSample
         /// <summary>
         /// 要素の最大幅を表します。
         /// </summary>
-        private const double MAX_TEXT_WIDTH = 3579139.0D;
+        private const double MAX_TEXT_WIDTH = 3579139.0D - 1.0D; // 処理途中で 0.5D を加算してもオーバーフローしないようにしておく
 
         /// <summary>
         /// 要素の最大高さを表します。
         /// </summary>
-        private const double MAX_TEXT_HEIGHT = 3579139.0D;
+        private const double MAX_TEXT_HEIGHT = 3579139.0D - 1.0D; // 処理途中で 0.5D を加算してもオーバーフローしないようにしておく
 
         /// <summary>
         /// 既定の縁取りの幅を表します。
         /// </summary>
-        private const double DEFAULT_OUTLINE_TICKNESS = 1.0D;
+        private const double DEFAULT_OUTLINE_TICKNESS = 1.5D;
+
+        /// <summary>
+        /// 縁取りを右下方向にずらす値を設定します。
+        /// </summary>
+        /// <remarks>
+        /// わずかに右下にずらしたほうが、小さいピクセルでの文字の見易さが向上するため。
+        /// </remarks>
+        private const double OUTLINE_OFFSET = 0.0D;
 
         #endregion
 
@@ -92,7 +100,7 @@ namespace OutlineTextSample
         /// Text 依存関係プロパティを識別します。このフィールドは読み取り専用です。
         /// </summary>
         public static readonly DependencyProperty TextProperty = DependencyProperty.Register(
-            "Text", typeof(string), typeof(OutlineText),
+            "Text", typeof(object), typeof(OutlineText),
             new FrameworkPropertyMetadata(null, FormattedTextInvalidated));
 
         /// <summary>
@@ -128,7 +136,7 @@ namespace OutlineTextSample
         /// </summary>
         public static readonly DependencyProperty ForegroundProperty = DependencyProperty.Register(
             "Foreground", typeof(Brush), typeof(OutlineText),
-            new FrameworkPropertyMetadata(Brushes.Black, FrameworkPropertyMetadataOptions.AffectsRender));
+            new FrameworkPropertyMetadata(Brushes.Black, ForegroundUpdated));
 
         /// <summary>
         /// Outline 依存関係プロパティを識別します。このフィールドは読み取り専用です。
@@ -194,6 +202,13 @@ namespace OutlineTextSample
         public static readonly DependencyProperty ClipBackgroundToTextProperty = DependencyProperty.Register(
             "ClipBackgroundToText", typeof(bool), typeof(OutlineText),
             new FrameworkPropertyMetadata(false, FormattedTextUpdated));
+
+        /// <summary>
+        /// FormatString 依存関係プロパティを識別します。このフィールドは読み取り専用です。
+        /// </summary>
+        public static readonly DependencyProperty FormatStringProperty = DependencyProperty.Register(
+            "FormatString", typeof(string), typeof(OutlineText),
+            new FrameworkPropertyMetadata(null, FormattedTextInvalidated));
 
         #endregion
 
@@ -376,11 +391,11 @@ namespace OutlineTextSample
         /// テキスト コンテンツを取得または設定します。
         /// </summary>
         [Description("テキスト コンテンツを取得または設定します。")]
-        public string Text
+        public object Text
         {
             get
             {
-                return (string)GetValue(TextProperty);
+                return GetValue(TextProperty);
             }
             set
             {
@@ -494,6 +509,23 @@ namespace OutlineTextSample
             }
         }
 
+        /// <summary>
+        /// テキスト コンテンツに適用する書式文字列を取得または設定します。 
+        /// </summary>
+        /// <value>テキスト コンテンツに適用する書式文字列。</value>
+        [Description("テキスト コンテンツに適用する書式文字列を取得または設定します。")]
+        public string FormatString
+        {
+            get
+            {
+                return (string)GetValue(FormatStringProperty);
+            }
+            set
+            {
+                SetValue(FormatStringProperty, value);
+            }
+        }
+
         #endregion
 
         #region コンストラクタ
@@ -516,15 +548,13 @@ namespace OutlineTextSample
         /// <param name="drawingContext">特定の要素の描画の手順です。 このコンテキストは、レイアウト システムで提供されています。</param>
         protected override void OnRender(DrawingContext drawingContext)
         {
-            EnsureGeometry();
-
             // 背景の描画
             if (Background != null)
             {
                 drawingContext.DrawRectangle(Background, null, backgroundRect);
             }
 
-            if (string.IsNullOrEmpty(Text) == true)
+            if (string.IsNullOrEmpty(GetFormattedString()) == true)
             {
                 return;
             }
@@ -537,8 +567,37 @@ namespace OutlineTextSample
                     ActualWidth + negativePadding.Left + negativePadding.Right,
                     ActualHeight + negativePadding.Top + negativePadding.Bottom)));
 
+            EnsureFormattedText();
+
+            double offsetX = 0.0D;
+
+            // これを行うとグリッドに配置した TextAlignment.Right の部品の挙動が
+            // セル幅を縮めていくと良くないのでコメント。
+#if false
+            // TextAlignment.Right であふれている際は、描画起点座標を修正
+            if ((formattedText.TextAlignment == TextAlignment.Right) &&
+                ((ActualWidth - positivePadding.Left - positivePadding.Right) < formattedText.MaxTextWidth))
+            {
+                offsetX = (ActualWidth - positivePadding.Left - positivePadding.Right) - formattedText.MaxTextWidth;
+            }
+#endif
+
+            // Center, Right の描画座標に、末尾のスペースを考慮させる
+            if (formattedText.TextAlignment == TextAlignment.Center)
+            {
+                // 末尾スペース考慮との差分の 50% 分、描画起点座標を左にずらす
+                offsetX = offsetX - (formattedText.WidthIncludingTrailingWhitespace - formattedText.Width) / 2;
+            }
+            if (formattedText.TextAlignment == TextAlignment.Right)
+            {
+                // 末尾スペース考慮との差分の 100% 分、描画起点座標を左にずらす
+                offsetX = offsetX - (formattedText.WidthIncludingTrailingWhitespace - formattedText.Width);
+            }
+
+            EnsureGeometry(offsetX);
+
             // 縁取りの描画
-            if ((OutlineVisibility == Visibility.Visible) && (Outline != null) && (OutlineThickness > 0))
+            if ((OutlineVisibility == Visibility.Visible) && (Outline != Brushes.Transparent) && (Outline != null) && (OutlineThickness > 0))
             {
                 // DrawGeometry はパスの中心から OutlineThickness の太さで描画するので、
                 // 外側の太さとしては、2 倍にして描画させる
@@ -548,7 +607,7 @@ namespace OutlineTextSample
                     LineJoin = PenLineJoin.Round
                 };
 
-                drawingContext.DrawGeometry(null, pen, textGeometry);
+                drawingContext.DrawGeometry(Outline, pen, textGeometry);
             }
 
             // DrawGeometry は ClearType が効かないので、改めて文字を描画する
@@ -556,7 +615,7 @@ namespace OutlineTextSample
             //       この場合、Window の各要素の CrearType は
             //       RenderOptions.ClearTypeHint="Enabled" によって改善する部品もあるが、
             //       OnRender の場合、ClearType に強制的に設定する方法が現状存在しない。
-            drawingContext.DrawText(formattedText, new Point(positivePadding.Left, positivePadding.Top));
+            drawingContext.DrawText(formattedText, new Point(positivePadding.Left + offsetX, positivePadding.Top));
         }
 
         /// <summary>
@@ -572,80 +631,89 @@ namespace OutlineTextSample
             EnsureFormattedText();
 
             Size measuredSize = default(Size);
-            double tmpMaxWidth = 0.0D;
-            double tmpMaxHeight = 0.0D;
 
-            // StackPanel などの要素にレイアウトした場合、Infinity になっているので補正を行う
-            if (double.IsInfinity(availableSize.Width) == true)
+            // 文字が指定されていなかった場合
+            if (string.IsNullOrEmpty(GetFormattedString()) == true)
             {
-                availableSize.Width = MAX_TEXT_WIDTH;
-            }
-            if (double.IsInfinity(availableSize.Height) == true)
-            {
-                availableSize.Height = MAX_TEXT_HEIGHT;
-            }
+                measuredSize = availableSize;
 
-            if (string.IsNullOrEmpty(Text) == true)
-            {
-                measuredSize = new Size(positivePadding.Left + positivePadding.Right, positivePadding.Top + positivePadding.Bottom);
-            }
-            else
-            {
-                // FormattedText の幅の決定処理 TextBlock のそれと挙動を同じにする
-                if (TextWrapping == TextWrapping.NoWrap)
+                if (double.IsInfinity(availableSize.Width) == true)
                 {
-                    // NoWrap のときは、いったん最大幅にもっていく
-                    formattedText.MaxTextWidth = MAX_TEXT_WIDTH;
-                    if (formattedText.Width > (availableSize.Width - positivePadding.Left - positivePadding.Right))
-                    {
-                        // 収まらないときは、TextAlignment を Left にする
-                        formattedText.TextAlignment = TextAlignment.Left;
+                    measuredSize.Width = positivePadding.Left + positivePadding.Right;
+                }
+                if (double.IsInfinity(availableSize.Height) == true)
+                {
+                    measuredSize.Height = positivePadding.Top + positivePadding.Bottom;
+                }
 
-                        if ((negativePadding.Left != 0) ||
-                            (negativePadding.Top != 0) ||
-                            (negativePadding.Right != 0) ||
-                            (negativePadding.Bottom != 0))
-                        {
-                            // 負の Padding が設定されている場合、親の大きさにする
-                            // (formattedText が大きいと、描画時に Actual なエリアでクリップされてしまうため、負の Padding をうまく描画できない)
-                            tmpMaxWidth = availableSize.Width - positivePadding.Left - positivePadding.Right;
-                        }
-                        else
-                        {
-                            tmpMaxWidth = formattedText.MaxTextWidth;
-                        }
-                    }
-                    else
-                    {
-                        // TextAlignment の復元
-                        formattedText.TextAlignment = TextAlignment;
+                return measuredSize;
+            }
 
-                        // 親の大きさにする
-                        tmpMaxWidth = availableSize.Width - positivePadding.Left - positivePadding.Right;
-                    }
+            // 基本的には、与えられたサイズを使うが、
+            // もし、それより少ないサイズでよければ、小さいサイズを使う、という考え方になる。
+
+            if (TextWrapping == TextWrapping.NoWrap)
+            {
+                // 幅と高さを計算し、もし、利用可能サイズより小さかったら、小さいサイズを返す
+                formattedText.MaxTextWidth = MAX_TEXT_WIDTH;
+                formattedText.MaxTextHeight = MAX_TEXT_HEIGHT;
+
+                // 計測された幅を最大幅とする
+                formattedText.MaxTextWidth = formattedText.WidthIncludingTrailingWhitespace;
+
+                if (double.IsInfinity(availableSize.Width) == true)
+                {
+                    measuredSize.Width = formattedText.WidthIncludingTrailingWhitespace + positivePadding.Left + positivePadding.Right;
+                }
+                else if ((formattedText.WidthIncludingTrailingWhitespace + positivePadding.Left + positivePadding.Right) > availableSize.Width)
+                {
+                    measuredSize.Width = availableSize.Width;
                 }
                 else
                 {
-                    // 親の大きさにする
-                    tmpMaxWidth = availableSize.Width - positivePadding.Left - positivePadding.Right;
+                    measuredSize.Width = formattedText.WidthIncludingTrailingWhitespace + positivePadding.Left + positivePadding.Right;
                 }
 
-                tmpMaxHeight = availableSize.Height - positivePadding.Top - positivePadding.Bottom;
-
-                if (tmpMaxWidth <= 0)
+                if (double.IsInfinity(availableSize.Height) == true)
                 {
-                    tmpMaxWidth = 1;
+                    measuredSize.Height = formattedText.Height + positivePadding.Top + positivePadding.Bottom;
                 }
-                if (tmpMaxHeight <= 0)
+                else if ((formattedText.Height + positivePadding.Top + positivePadding.Bottom) > availableSize.Height)
                 {
-                    tmpMaxHeight = 1;
+                    measuredSize.Height = availableSize.Height;
                 }
-                formattedText.MaxTextWidth = tmpMaxWidth;
-                formattedText.MaxTextHeight = tmpMaxHeight;
+                else
+                {
+                    measuredSize.Height = formattedText.Height + positivePadding.Top + positivePadding.Bottom;
+                }
+            }
+            else
+            {
+                // 高さを計算し、もし、利用可能サイズより小さかったら、小さいサイズを返す
+                if ((double.IsInfinity(availableSize.Width) == true) || (availableSize.Width > MAX_TEXT_WIDTH))
+                {
+                    formattedText.MaxTextWidth = MAX_TEXT_WIDTH;
+                }
+                else
+                {
+                    formattedText.MaxTextWidth = availableSize.Width - positivePadding.Left - positivePadding.Right + 0.5D; // LayoutRounding の影響で整数に丸められると描画できなくなることがあるので、丸め分大きくする
+                }
+                formattedText.MaxTextHeight = MAX_TEXT_HEIGHT;
 
-                measuredSize = new Size(
-                    formattedText.Width + positivePadding.Left + positivePadding.Right,
-                    formattedText.Height + positivePadding.Top + positivePadding.Bottom);
+                measuredSize.Width = formattedText.WidthIncludingTrailingWhitespace + positivePadding.Left + positivePadding.Right;
+
+                if (double.IsInfinity(availableSize.Height) == true)
+                {
+                    measuredSize.Height = formattedText.Height + positivePadding.Top + positivePadding.Bottom;
+                }
+                else if ((formattedText.Height + positivePadding.Top + positivePadding.Bottom) > availableSize.Height)
+                {
+                    measuredSize.Height = availableSize.Height;
+                }
+                else
+                {
+                    measuredSize.Height = formattedText.Height + positivePadding.Top + positivePadding.Bottom;
+                }
             }
 
             EnsureBackground(measuredSize);
@@ -662,6 +730,19 @@ namespace OutlineTextSample
         {
             EnsureFormattedText();
 
+            // 最終的なサイズを設定する
+            if (formattedText != null)
+            {
+                if (finalSize.Width > (formattedText.WidthIncludingTrailingWhitespace + positivePadding.Left + positivePadding.Right))
+                {
+                    formattedText.MaxTextWidth = finalSize.Width - positivePadding.Left - positivePadding.Right + 0.5D; // LayoutRounding の影響で整数に丸められると描画できなくなることがあるので、丸め分大きくする
+                }
+                if (finalSize.Height > (formattedText.Height + positivePadding.Top + positivePadding.Bottom))
+                {
+                    formattedText.MaxTextHeight = finalSize.Height - positivePadding.Top - positivePadding.Bottom + 0.5D; // LayoutRounding の影響で整数に丸められると描画できなくなることがあるので、丸め分大きくする
+                }
+            }
+
             textGeometry = null;
 
             EnsureBackground(finalSize);
@@ -670,7 +751,20 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// <see cref="formattedText"/> が無効になった際に発生します。
+        /// <see cref="Foreground"/> が更新された際に発生します。
+        /// </summary>
+        /// <param name="dependencyObject">プロパティの値が変更された <see cref="DependencyObject"/>。</param>
+        /// <param name="e">このプロパティの有効値に対する変更を追跡するイベントによって発行されるイベント データ。</param>
+        private static void ForegroundUpdated(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
+        {
+            OutlineText outlineText = (OutlineText)dependencyObject;
+
+            outlineText.UpdateFormattedText();
+            outlineText.InvalidateVisual();
+        }
+
+        /// <summary>
+        /// <see cref="FormattedText"/> が無効になった際に発生します。
         /// </summary>
         /// <param name="dependencyObject">プロパティの値が変更された <see cref="DependencyObject"/>。</param>
         /// <param name="e">このプロパティの有効値に対する変更を追跡するイベントによって発行されるイベント データ。</param>
@@ -682,7 +776,7 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// <see cref="formattedText"/> が無効になった際に発生します。
+        /// <see cref="FormattedText"/> が無効になった際に発生します。
         /// </summary>
         /// <param name="e">このプロパティの有効値に対する変更を追跡するイベントによって発行されるイベント データ。</param>
         protected virtual void OnFormattedTextInvalidated(DependencyPropertyChangedEventArgs e)
@@ -695,7 +789,7 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// <see cref="formattedText"/> が更新された際に発生します。
+        /// <see cref="FormattedText"/> が更新された際に発生します。
         /// </summary>
         /// <param name="dependencyObject">プロパティの値が変更された <see cref="DependencyObject"/>。</param>
         /// <param name="e">このプロパティの有効値に対する変更を追跡するイベントによって発行されるイベント データ。</param>
@@ -707,7 +801,7 @@ namespace OutlineTextSample
         }
 
         /// <summary>
-        /// <see cref="formattedText"/> が更新された際に発生します。
+        /// <see cref="FormattedText"/> が更新された際に発生します。
         /// </summary>
         /// <param name="e">このプロパティの有効値に対する変更を追跡するイベントによって発行されるイベント データ。</param>
         protected virtual void OnFormattedTextUpdated(DependencyPropertyChangedEventArgs e)
@@ -844,17 +938,42 @@ namespace OutlineTextSample
         }
 
         /// <summary>
+        /// フォーマットを加味したテキスト コンテンツを返します。
+        /// </summary>
+        /// <returns>フォーマットを加味したテキスト コンテンツ。</returns>
+        protected virtual string GetFormattedString()
+        {
+            string _text = null;
+
+            if (Text == null)
+            {
+                return null;
+            }
+
+            if (string.IsNullOrEmpty(FormatString) != true)
+            {
+                _text = string.Format(FormatString, Text);
+            }
+            else
+            {
+                _text = Text.ToString();
+            }
+
+            return _text;
+        }
+
+        /// <summary>
         /// <see cref="formattedText"/> を再評価します。
         /// </summary>
         protected virtual void EnsureFormattedText()
         {
-            if ((formattedText != null) || (string.IsNullOrEmpty(Text) == true))
+            if ((formattedText != null) || (string.IsNullOrEmpty(GetFormattedString()) == true))
             {
                 return;
             }
 
             formattedText = new FormattedText(
-                Text,
+                GetFormattedString(),
                 CultureInfo.CurrentUICulture,
                 FlowDirection,
                 new Typeface(FontFamily, FontStyle, FontWeight, FontStretch),
@@ -899,15 +1018,17 @@ namespace OutlineTextSample
         /// <summary>
         /// <see cref="textGeometry"/> を再評価します。
         /// </summary>
-        protected virtual void EnsureGeometry()
+        /// <param name="offsetX">水平方向のオフセット値。</param>
+        /// <param name="offsetY">垂直方向のオフセット値。</param>
+        protected virtual void EnsureGeometry(double offsetX = 0, double offsetY = 0)
         {
             if (textGeometry == null)
             {
                 EnsureFormattedText();
 
-                if (string.IsNullOrEmpty(Text) != true)
+                if (string.IsNullOrEmpty(GetFormattedString()) != true)
                 {
-                    textGeometry = formattedText.BuildGeometry(new Point(positivePadding.Left, positivePadding.Top));
+                    textGeometry = formattedText.BuildGeometry(new Point(positivePadding.Left + offsetX + OUTLINE_OFFSET, positivePadding.Top + offsetY + OUTLINE_OFFSET));
                 }
             }
         }
@@ -926,7 +1047,7 @@ namespace OutlineTextSample
             }
             else
             {
-                contentSize = new Size(formattedText.Width, formattedText.Height);
+                contentSize = new Size(formattedText.WidthIncludingTrailingWhitespace, formattedText.Height);
             }
 
             if (ClipBackgroundToText == true)
